@@ -1,0 +1,60 @@
+    1  nmcli con mod enp0s3 ipv4.addresses 192.168.1.100/24 ipv4.gateway 192.168.1.1 ipv4.dns "8.8.8.8" ipv4.method manual
+    2  nmcli con up enp0s3
+    3  hosnamectl set-hostname mephi-2026.domain.local
+    4  hostnamectl set-hostname mephi-2026.domain.local
+    5  ping -c 4 8.8.8.8 > /tmp/network_check.txt
+    6  ping -c 4 192.168.1.1 >> /tmp/network_check.txt
+    7  cat /tmp/network_check.txt
+    8  dnf install -y nginx tcpdump libcap-ng-utils
+    9  cd /tmp
+   10  dnf download tcpdump
+   11  rpm -ivh tcpdump-*.rpm --force
+   12  printf "n\np\n1\n\n\nw\n" | fdisk /dev/sdb
+   13  mkfs.ext4 -L MEPHI_DATA /dev/sdb1
+   14  mkdir -p /data/mephi-web
+   15  echo "LABEL=MEPHI_DATA /data/mephi-web ext4 defaults 0 2" >> /etc/fstab
+   16  mount -1
+   17  mount -a
+   18  systemctl deamon-reload
+   19  systemctl daemon-reload
+   20  mount -a
+   21  df -h /data/mephi-web
+   22  systemctl enable --now nginx
+   23  sed -i 's|root         /usr/share/nginx/html;|root         /data/mephi-web;|' /etc/nginx/nginx.conf
+   24  systemctl restart nginx
+   25  grep "root" /etc/nginx/nginx.conf
+   26  journalctl -u nginx --since "5 minutes ago" > /tmp/nginx_recent_logs.txt
+   27  cat /tmp/nginx_recent_logs.txt
+   28  groupadd mephi-devs
+   29  useradd -m -G mephi-devs,wheel mephi-admin
+   30  echo "mephi-admin:P@ssw0rd2026" | chpasswd
+   31  chown -R mephi-admin:mephi-devs /data/mephi-web
+   32  chmod 2775 /data/mephi-web
+   33  semanage fcontext -a -t httpd_sys_content_t "/data/mephi-web(/.*)?"
+   34  restorecon -Rv /data/mephi-web
+   35  chmod u-s /usr/sbin/tcpdump
+   36  setcap cap_nwt_raw,cap_net_admin+ep /usr/sbin/tcpdump
+   37  setcap cap_net_raw,cap_net_admin+ep /usr/sbin/tcpdump
+   38  sudo -u mephi-admin tcpdump --help
+   39  echo "root" > /etc/ssh/denied_users
+   40  sed -i '1i auth required pam_listfile.so item=user sense=deny file=/etc/ssh/denied_users onerr=succeed' /etc/pam.d/sshd
+   41  sed -i '1i auth required pam_listfile.so item=user sense=deny file=/etc/ssh/denied_users onerr=succeed' /etc/pam.d/login
+   42  sed -i 's/^#PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
+   43  su - mephi-admin
+   44  cd /
+   45  cat /root/.bash_history > /home/mephi-admin/project_history.txt
+   46  ping -c 4 192.168.1.1 > /home/mephi-admin/network_check.txt
+   47  ping -c 4 8.8.8.8 >> /home/mephi-admin/network_check.txt
+   48  journalctl -u nginx --since "20 minutes ago" > /home/mephi-admin/nginx_recent_logs.txt
+   49  cp /etc/fstab /home/mephi-admin/fstab.txt
+   50  getenforce > /home/mephi-admin/selinux_status.txt
+   51  ls -Zd /data/mephi-web > /home/mephi-admin/file_contexts.txt
+   52  getcap /usr/sbin/tcpdump > /home/mephi-admin/tcpdump_capabilities.txt
+   53  stat /data/mephi-web > /home/mephi-admin/permissions.txt
+   54  id mephi-admin > /home/mephi-admin/user-groups.txt
+   55  getent group mephi-devs >> /home/mephi-admin/user-groups.txt 
+   56  curl -s http://192.168.1.100 > /home/mephi-admin/curl_output.txt
+   57  cp /data/mephi-web/index.html /home/mephi-admin/index.html
+   58  cp /tmp/tcpdump-*.rpm /home/mephi-admin/
+   59  chown mephi-admin:mephi-admin /home/mephi-admin/*
+   60  history >> /home/mephi-admin/project_history.txt 
